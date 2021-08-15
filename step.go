@@ -5,37 +5,37 @@ import (
 )
 
 const (
-	stepFieldStateRoot = iota
-	stepFieldBlockHashes
-	stepFieldCoinbase
-	stepFieldGasLimit
-	stepFieldBlockNumber
-	stepFieldTime
-	stepFieldDifficulty
-	stepFieldBaseFee
-	stepFieldOrigin
-	stepFieldTxIndex
-	stepFieldGasPrice
-	stepFieldTo
-	stepFieldCreate
-	stepFieldCallDepth
-	stepFieldCaller
-	stepFieldMemory
-	stepFieldMemoryLastGasCost
-	stepFieldStack
-	stepFieldReturnData
-	stepFieldCode
-	stepFieldCodeHash
-	stepFieldCodeAddr
-	stepFieldInput
-	stepFieldGas
-	stepFieldValue
-	stepFieldOp
-	stepFieldPc
-	stepFieldSubIndex
-	stepFieldSubRemaining
-	stepFieldSubScratch
-	stepFieldReturnToStep
+	fieldStateRoot = iota
+	fieldBlockHashes
+	fieldCoinbase
+	fieldGasLimit
+	fieldBlockNumber
+	fieldTime
+	fieldDifficulty
+	fieldBaseFee
+	fieldOrigin
+	fieldTxIndex
+	fieldGasPrice
+	fieldTo
+	fieldCreate
+	fieldCallDepth
+	fieldCaller
+	fieldMemory
+	fieldMemLastGasCost
+	fieldStack
+	fieldReturnData
+	fieldCode
+	fieldCodeHash
+	fieldCodeAddr
+	fieldInput
+	fieldGas
+	fieldValue
+	fieldOp
+	fieldPc
+	fieldSubIndex
+	fieldSubRemaining
+	fieldSubScratch
+	fieldReturnToStep
 )
 
 const Bytes32Type = RootType
@@ -109,78 +109,68 @@ func asBool(v View, err error) (bool, error) {
 	return bool(out), errOut
 }
 
-func (v *StepView) GetStateRoot() ([32]byte, error) { return AsRoot(v.Get(stepFieldStateRoot)) }
-func (v *StepView) SetStateRoot(p [32]byte) error {
-	return v.Set(stepFieldStateRoot, (*Bytes32View)(&p))
-}
-func (v *StepView) GetBlockHashes() (View, error)    { return v.Get(stepFieldBlockHashes) }
-func (v *StepView) SetBlockHashes(p View) error      { return v.Set(stepFieldBlockHashes, p) }
-func (v *StepView) GetCoinbase() (Address, error)    { return AsAddress(v.Get(stepFieldCoinbase)) }
-func (v *StepView) SetCoinbase(p Address) error      { return v.Set(stepFieldCoinbase, p.View()) }
-func (v *StepView) GetGasLimit() (uint64, error)     { return asUint64(v.Get(stepFieldGasLimit)) }
-func (v *StepView) SetGasLimit(p uint64) error       { return v.Set(stepFieldGasLimit, Uint64View(p)) }
-func (v *StepView) GetBlockNumber() (uint64, error)  { return asUint64(v.Get(stepFieldBlockNumber)) }
-func (v *StepView) SetBlockNumber(p uint64) error    { return v.Set(stepFieldBlockNumber, Uint64View(p)) }
-func (v *StepView) GetTime() (uint64, error)         { return asUint64(v.Get(stepFieldTime)) }
-func (v *StepView) SetTime(p uint64) error           { return v.Set(stepFieldTime, Uint64View(p)) }
-func (v *StepView) GetDifficulty() ([32]byte, error) { return AsRoot(v.Get(stepFieldDifficulty)) }
-func (v *StepView) SetDifficulty(p [32]byte) error {
-	return v.Set(stepFieldDifficulty, (*Bytes32View)(&p))
-}
-func (v *StepView) GetBaseFee() ([32]byte, error) { return AsRoot(v.Get(stepFieldBaseFee)) }
-func (v *StepView) SetBaseFee(p [32]byte) error   { return v.Set(stepFieldBaseFee, (*Bytes32View)(&p)) }
-func (v *StepView) GetOrigin() (Address, error)   { return AsAddress(v.Get(stepFieldOrigin)) }
-func (v *StepView) SetOrigin(p Address) error     { return v.Set(stepFieldOrigin, p.View()) }
-func (v *StepView) GetTxIndex() (View, error)     { return v.Get(stepFieldTxIndex) }
-func (v *StepView) SetTxIndex(p uint64) error     { return v.Set(stepFieldTxIndex, Uint64View(p)) }
-func (v *StepView) GetGasPrice() (View, error)    { return v.Get(stepFieldGasPrice) }
-func (v *StepView) SetGasPrice(p uint64) error    { return v.Set(stepFieldGasPrice, Uint64View(p)) }
-func (v *StepView) GetTo() (Address, error)       { return AsAddress(v.Get(stepFieldTo)) }
-func (v *StepView) SetTo(p Address) error         { return v.Set(stepFieldTo, p.View()) }
-func (v *StepView) GetCreate() (bool, error)      { return asBool(v.Get(stepFieldCreate)) }
-func (v *StepView) SetCreate(p bool) error        { return v.Set(stepFieldCreate, BoolView(p)) }
-func (v *StepView) GetCallDepth() (View, error)   { return v.Get(stepFieldCallDepth) }
-func (v *StepView) SetCallDepth(p uint64) error   { return v.Set(stepFieldCallDepth, Uint64View(p)) }
-func (v *StepView) GetCaller() (Address, error)   { return AsAddress(v.Get(stepFieldCaller)) }
-func (v *StepView) SetCaller(p Address) error     { return v.Set(stepFieldCaller, p.View()) }
-func (v *StepView) GetMemory() (View, error)      { return v.Get(stepFieldMemory) }
-func (v *StepView) SetMemory(p View) error        { return v.Set(stepFieldMemory, p) }
-func (v *StepView) GetMemoryLastGasCost() (uint64, error) {
-	return asUint64(v.Get(stepFieldMemoryLastGasCost))
-}
-func (v *StepView) SetMemoryLastGasCost(p uint64) error {
-	return v.Set(stepFieldMemoryLastGasCost, Uint64View(p))
-}
-func (v *StepView) GetStack() (View, error)          { return v.Get(stepFieldStack) }
-func (v *StepView) SetStack(p View) error            { return v.Set(stepFieldStack, p) }
-func (v *StepView) GetReturnData() (View, error)     { return v.Get(stepFieldReturnData) }
-func (v *StepView) SetReturnData(p View) error       { return v.Set(stepFieldReturnData, p) }
-func (v *StepView) GetCode() (View, error)           { return v.Get(stepFieldCode) }
-func (v *StepView) SetCode(p View) error             { return v.Set(stepFieldCode, p) }
-func (v *StepView) GetCodeHash() (View, error)       { return v.Get(stepFieldCodeHash) }
-func (v *StepView) SetCodeHash(p [32]byte) error     { return v.Set(stepFieldCodeHash, (*Bytes32View)(&p)) }
-func (v *StepView) GetCodeAddr() (Address, error)    { return AsAddress(v.Get(stepFieldCodeAddr)) }
-func (v *StepView) SetCodeAddr(p Address) error      { return v.Set(stepFieldCodeAddr, p.View()) }
-func (v *StepView) GetInput() (View, error)          { return v.Get(stepFieldInput) }
-func (v *StepView) SetInput(p View) error            { return v.Set(stepFieldInput, p) }
-func (v *StepView) GetGas() (View, error)            { return v.Get(stepFieldGas) }
-func (v *StepView) SetGas(p uint64) error            { return v.Set(stepFieldGas, Uint64View(p)) }
-func (v *StepView) GetValue() ([32]byte, error)      { return AsRoot(v.Get(stepFieldValue)) }
-func (v *StepView) SetValue(p [32]byte) error        { return v.Set(stepFieldValue, (*Bytes32View)(&p)) }
-func (v *StepView) GetOp() (View, error)             { return v.Get(stepFieldOp) }
-func (v *StepView) SetOp(p byte) error               { return v.Set(stepFieldOp, ByteView(p)) }
-func (v *StepView) GetPc() (uint64, error)           { return asUint64(v.Get(stepFieldPc)) }
-func (v *StepView) SetPc(p uint64) error             { return v.Set(stepFieldPc, Uint64View(p)) }
-func (v *StepView) GetSubIndex() (uint64, error)     { return asUint64(v.Get(stepFieldSubIndex)) }
-func (v *StepView) SetSubIndex(p uint64) error       { return v.Set(stepFieldSubIndex, Uint64View(p)) }
-func (v *StepView) GetSubRemaining() (bool, error)   { return asBool(v.Get(stepFieldSubRemaining)) }
-func (v *StepView) SetSubRemaining(p bool) error     { return v.Set(stepFieldSubRemaining, BoolView(p)) }
-func (v *StepView) GetSubScratch() (View, error)     { return v.Get(stepFieldSubScratch) }
-func (v *StepView) SetSubScratch(p View) error       { return v.Set(stepFieldSubScratch, p) }
-func (v *StepView) GetReturnToStep() (uint64, error) { return asUint64(v.Get(stepFieldReturnToStep)) }
-func (v *StepView) SetReturnToStep(p uint64) error {
-	return v.Set(stepFieldReturnToStep, Uint64View(p))
-}
+func (v *StepView) GetStateRoot() ([32]byte, error)    { return AsRoot(v.Get(fieldStateRoot)) }
+func (v *StepView) SetStateRoot(p [32]byte) error      { return v.Set(fieldStateRoot, (*Bytes32View)(&p)) }
+func (v *StepView) GetBlockHashes() (View, error)      { return v.Get(fieldBlockHashes) }
+func (v *StepView) SetBlockHashes(p View) error        { return v.Set(fieldBlockHashes, p) }
+func (v *StepView) GetCoinbase() (Address, error)      { return AsAddress(v.Get(fieldCoinbase)) }
+func (v *StepView) SetCoinbase(p Address) error        { return v.Set(fieldCoinbase, p.View()) }
+func (v *StepView) GetGasLimit() (uint64, error)       { return asUint64(v.Get(fieldGasLimit)) }
+func (v *StepView) SetGasLimit(p uint64) error         { return v.Set(fieldGasLimit, Uint64View(p)) }
+func (v *StepView) GetBlockNumber() (uint64, error)    { return asUint64(v.Get(fieldBlockNumber)) }
+func (v *StepView) SetBlockNumber(p uint64) error      { return v.Set(fieldBlockNumber, Uint64View(p)) }
+func (v *StepView) GetTime() (uint64, error)           { return asUint64(v.Get(fieldTime)) }
+func (v *StepView) SetTime(p uint64) error             { return v.Set(fieldTime, Uint64View(p)) }
+func (v *StepView) GetDifficulty() ([32]byte, error)   { return AsRoot(v.Get(fieldDifficulty)) }
+func (v *StepView) SetDifficulty(p [32]byte) error     { return v.Set(fieldDifficulty, (*Bytes32View)(&p)) }
+func (v *StepView) GetBaseFee() ([32]byte, error)      { return AsRoot(v.Get(fieldBaseFee)) }
+func (v *StepView) SetBaseFee(p [32]byte) error        { return v.Set(fieldBaseFee, (*Bytes32View)(&p)) }
+func (v *StepView) GetOrigin() (Address, error)        { return AsAddress(v.Get(fieldOrigin)) }
+func (v *StepView) SetOrigin(p Address) error          { return v.Set(fieldOrigin, p.View()) }
+func (v *StepView) GetTxIndex() (View, error)          { return v.Get(fieldTxIndex) }
+func (v *StepView) SetTxIndex(p uint64) error          { return v.Set(fieldTxIndex, Uint64View(p)) }
+func (v *StepView) GetGasPrice() (View, error)         { return v.Get(fieldGasPrice) }
+func (v *StepView) SetGasPrice(p uint64) error         { return v.Set(fieldGasPrice, Uint64View(p)) }
+func (v *StepView) GetTo() (Address, error)            { return AsAddress(v.Get(fieldTo)) }
+func (v *StepView) SetTo(p Address) error              { return v.Set(fieldTo, p.View()) }
+func (v *StepView) GetCreate() (bool, error)           { return asBool(v.Get(fieldCreate)) }
+func (v *StepView) SetCreate(p bool) error             { return v.Set(fieldCreate, BoolView(p)) }
+func (v *StepView) GetCallDepth() (View, error)        { return v.Get(fieldCallDepth) }
+func (v *StepView) SetCallDepth(p uint64) error        { return v.Set(fieldCallDepth, Uint64View(p)) }
+func (v *StepView) GetCaller() (Address, error)        { return AsAddress(v.Get(fieldCaller)) }
+func (v *StepView) SetCaller(p Address) error          { return v.Set(fieldCaller, p.View()) }
+func (v *StepView) GetMemory() (View, error)           { return v.Get(fieldMemory) }
+func (v *StepView) SetMemory(p View) error             { return v.Set(fieldMemory, p) }
+func (v *StepView) GetMemLastGasCost() (uint64, error) { return asUint64(v.Get(fieldMemLastGasCost)) }
+func (v *StepView) SetMemLastGasCost(p uint64) error   { return v.Set(fieldMemLastGasCost, Uint64View(p)) }
+func (v *StepView) GetStack() (View, error)            { return v.Get(fieldStack) }
+func (v *StepView) SetStack(p View) error              { return v.Set(fieldStack, p) }
+func (v *StepView) GetReturnData() (View, error)       { return v.Get(fieldReturnData) }
+func (v *StepView) SetReturnData(p View) error         { return v.Set(fieldReturnData, p) }
+func (v *StepView) GetCode() (View, error)             { return v.Get(fieldCode) }
+func (v *StepView) SetCode(p View) error               { return v.Set(fieldCode, p) }
+func (v *StepView) GetCodeHash() (View, error)         { return v.Get(fieldCodeHash) }
+func (v *StepView) SetCodeHash(p [32]byte) error       { return v.Set(fieldCodeHash, (*Bytes32View)(&p)) }
+func (v *StepView) GetCodeAddr() (Address, error)      { return AsAddress(v.Get(fieldCodeAddr)) }
+func (v *StepView) SetCodeAddr(p Address) error        { return v.Set(fieldCodeAddr, p.View()) }
+func (v *StepView) GetInput() (View, error)            { return v.Get(fieldInput) }
+func (v *StepView) SetInput(p View) error              { return v.Set(fieldInput, p) }
+func (v *StepView) GetGas() (View, error)              { return v.Get(fieldGas) }
+func (v *StepView) SetGas(p uint64) error              { return v.Set(fieldGas, Uint64View(p)) }
+func (v *StepView) GetValue() ([32]byte, error)        { return AsRoot(v.Get(fieldValue)) }
+func (v *StepView) SetValue(p [32]byte) error          { return v.Set(fieldValue, (*Bytes32View)(&p)) }
+func (v *StepView) GetOp() (View, error)               { return v.Get(fieldOp) }
+func (v *StepView) SetOp(p byte) error                 { return v.Set(fieldOp, ByteView(p)) }
+func (v *StepView) GetPc() (uint64, error)             { return asUint64(v.Get(fieldPc)) }
+func (v *StepView) SetPc(p uint64) error               { return v.Set(fieldPc, Uint64View(p)) }
+func (v *StepView) GetSubIndex() (uint64, error)       { return asUint64(v.Get(fieldSubIndex)) }
+func (v *StepView) SetSubIndex(p uint64) error         { return v.Set(fieldSubIndex, Uint64View(p)) }
+func (v *StepView) GetSubRemaining() (bool, error)     { return asBool(v.Get(fieldSubRemaining)) }
+func (v *StepView) SetSubRemaining(p bool) error       { return v.Set(fieldSubRemaining, BoolView(p)) }
+func (v *StepView) GetSubScratch() (View, error)       { return v.Get(fieldSubScratch) }
+func (v *StepView) SetSubScratch(p View) error         { return v.Set(fieldSubScratch, p) }
+func (v *StepView) GetReturnToStep() (uint64, error)   { return asUint64(v.Get(fieldReturnToStep)) }
+func (v *StepView) SetReturnToStep(p uint64) error     { return v.Set(fieldReturnToStep, Uint64View(p)) }
 
 func StepType() *ContainerTypeDef {
 	return ContainerType("Step", []FieldDef{
