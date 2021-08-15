@@ -11,6 +11,10 @@ type RetDataView struct {
 	*ComplexListView
 }
 
+func EmptyReturnData() *RetDataView {
+	return &RetDataView{ComplexListView: RetDataType.Default(nil).(*ComplexListView)}
+}
+
 func AsRetDataView(v View, err error) (*RetDataView, error) {
 	li, err := AsComplexList(v, err)
 	if err != nil {

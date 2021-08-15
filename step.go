@@ -1,8 +1,59 @@
 package opti
 
 import (
+	"fmt"
 	. "github.com/protolambda/ztyp/view"
 )
+
+type Steps []*StepView
+
+func (steps *Steps) Prev() *StepView {
+	if steps == nil {
+		return nil
+	}
+	if len(*steps) == 0 {
+		return nil
+	}
+	return (*steps)[len(*steps)-1]
+}
+
+func (steps *Steps) ByIndex(i uint64) *StepView {
+	if steps == nil {
+		return nil
+	}
+	if i >= uint64(len(*steps)) {
+		return nil
+	}
+	return (*steps)[i]
+}
+
+var _ StepsTrace = (*Steps)(nil)
+
+func (steps *Steps) Append(step *StepView) error {
+	if steps == nil {
+		return fmt.Errorf("cannot extend nil steps")
+	}
+	*steps = append(*steps, step)
+	return nil
+}
+
+func (steps *Steps) Length() uint64 {
+	if steps == nil {
+		return 0
+	}
+	return uint64(len(*steps))
+}
+
+type StepsTrace interface {
+	// nil if empty steps
+	Prev() *StepView
+	// nil if invalid index
+	ByIndex(i uint64) *StepView
+	Append(step *StepView) error
+	Length() uint64
+}
+
+type Processor func(trac StepsTrace) error
 
 const (
 	fieldStateRoot = iota
@@ -121,6 +172,15 @@ func StepType() *ContainerTypeDef {
 		// Steps that access memory need to supply a separate (outside of the step sub-tree)
 		// MPT-proof of the account and/or storage to access the data.
 		{"state_root", Bytes32Type},
+
+		// TODO: operation-mode field, to switch between:
+		// - block processing
+		// - transaction inclusion check
+		// - transaction validation
+		// - interpreter loop: "Run"
+		// - opcode processing
+		// - block post-processing (build MPT from buffered receipt roots, handle logs-bloom, etc.)
+
 		// History scope
 		// ------------------
 		// Most recent 256 blocks (excluding the block itself)
@@ -140,6 +200,9 @@ func StepType() *ContainerTypeDef {
 		{"origin", AddressType},
 		{"tx_index", Uint64Type},
 		{"gas_price", Uint64Type},
+
+		// TODO: add read-only mode bool field to support STATIC-CALL
+
 		// Contract scope
 		// ------------------
 		{"to", AddressType},

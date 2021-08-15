@@ -26,3 +26,11 @@ func (v *StackView) SetWord(i uint64, w [32]byte) error {
 func (v *StackView) GetWord(i uint64) ([32]byte, error) {
 	return AsRoot(v.Get(i))
 }
+
+func (v *StackView) PushWord(w [32]byte) error {
+	return v.Append((*Bytes32View)(&w))
+}
+
+func (v *StackView) PopWord() error {
+	return v.Pop()
+}
