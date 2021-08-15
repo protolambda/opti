@@ -21,9 +21,9 @@ const (
 	fieldCallDepth
 	fieldCaller
 	fieldMemory
-	fieldMemLastGasCost
+	fieldMemLastGas
 	fieldStack
-	fieldReturnData
+	fieldRetData
 	fieldCode
 	fieldCodeHash
 	fieldCodeAddr
@@ -34,57 +34,9 @@ const (
 	fieldPc
 	fieldSubIndex
 	fieldSubRemaining
-	fieldSubScratch
+	fieldSubData
 	fieldReturnToStep
 )
-
-const Bytes32Type = RootType
-
-type Bytes32View = RootView
-
-var BlockHashesType = VectorType(RootType, 256)
-
-const AddressType = SmallByteVecMeta(20)
-
-func AsAddress(v View, err error) (Address, error) {
-	c, err := AsSmallByteVec(v, err)
-	if err != nil {
-		return Address{}, err
-	}
-	var out Address
-	copy(out[:], c)
-	return out, nil
-}
-
-type Address [20]byte
-
-func (addr Address) View() SmallByteVecView {
-	// overlay on a copy of the value
-	return SmallByteVecView(addr[:])
-}
-
-// TODO: 64 MB memory maximum enough or too much? Every 2x makes the tree a layer deeper,
-// but otherwise not much cost for unused space
-var MemoryType = ListType(Bytes32Type, 64<<20)
-
-// EVM stack is max 1024 words
-var StackType = ListType(Bytes32Type, 1024)
-
-// Needs to be as big as memory, all of it can be returned
-var ReturnDataType = ListType(Bytes32Type, 64<<20)
-
-// See https://github.com/ethereum/EIPs/blob/master/EIPS/eip-170.md
-// ~24.5 KB
-var CodeType = ListType(ByteType, 0x6000)
-
-// Assuming a tx input can be max 400M gas, and 4 gas is paid per zero byte, then put a 100M limit on input.
-var InputType = ListType(ByteType, 100_000_000)
-
-// 1024 words to track sub-step progress. Not to be confused with the memory scratchpad slots.
-// TODO: any operations that need more scratch space?
-var ScratchType = VectorType(Bytes32Type, 1024)
-
-// TODO: views over memory, return data, stack, code, input and scratch
 
 type StepView struct {
 	*ContainerView
@@ -99,20 +51,10 @@ func (v *StepView) CopyView() (*StepView, error) {
 	return AsStep(v.Copy())
 }
 
-func asUint64(v View, err error) (uint64, error) {
-	out, errOut := AsUint64(v, err)
-	return uint64(out), errOut
-}
-
-func asBool(v View, err error) (bool, error) {
-	out, errOut := AsBool(v, err)
-	return bool(out), errOut
-}
-
 func (v *StepView) GetStateRoot() ([32]byte, error)    { return AsRoot(v.Get(fieldStateRoot)) }
 func (v *StepView) SetStateRoot(p [32]byte) error      { return v.Set(fieldStateRoot, (*Bytes32View)(&p)) }
-func (v *StepView) GetBlockHashes() (View, error)      { return v.Get(fieldBlockHashes) }
-func (v *StepView) SetBlockHashes(p View) error        { return v.Set(fieldBlockHashes, p) }
+func (v *StepView) GetBlockHashes() (*HistView, error) { return AsHistView(v.Get(fieldBlockHashes)) }
+func (v *StepView) SetBlockHashes(p *HistView) error   { return v.Set(fieldBlockHashes, p) }
 func (v *StepView) GetCoinbase() (Address, error)      { return AsAddress(v.Get(fieldCoinbase)) }
 func (v *StepView) SetCoinbase(p Address) error        { return v.Set(fieldCoinbase, p.View()) }
 func (v *StepView) GetGasLimit() (uint64, error)       { return asUint64(v.Get(fieldGasLimit)) }
@@ -127,39 +69,39 @@ func (v *StepView) GetBaseFee() ([32]byte, error)      { return AsRoot(v.Get(fie
 func (v *StepView) SetBaseFee(p [32]byte) error        { return v.Set(fieldBaseFee, (*Bytes32View)(&p)) }
 func (v *StepView) GetOrigin() (Address, error)        { return AsAddress(v.Get(fieldOrigin)) }
 func (v *StepView) SetOrigin(p Address) error          { return v.Set(fieldOrigin, p.View()) }
-func (v *StepView) GetTxIndex() (View, error)          { return v.Get(fieldTxIndex) }
+func (v *StepView) GetTxIndex() (uint64, error)        { return asUint64(v.Get(fieldTxIndex)) }
 func (v *StepView) SetTxIndex(p uint64) error          { return v.Set(fieldTxIndex, Uint64View(p)) }
-func (v *StepView) GetGasPrice() (View, error)         { return v.Get(fieldGasPrice) }
+func (v *StepView) GetGasPrice() (uint64, error)       { return asUint64(v.Get(fieldGasPrice)) }
 func (v *StepView) SetGasPrice(p uint64) error         { return v.Set(fieldGasPrice, Uint64View(p)) }
 func (v *StepView) GetTo() (Address, error)            { return AsAddress(v.Get(fieldTo)) }
 func (v *StepView) SetTo(p Address) error              { return v.Set(fieldTo, p.View()) }
 func (v *StepView) GetCreate() (bool, error)           { return asBool(v.Get(fieldCreate)) }
 func (v *StepView) SetCreate(p bool) error             { return v.Set(fieldCreate, BoolView(p)) }
-func (v *StepView) GetCallDepth() (View, error)        { return v.Get(fieldCallDepth) }
+func (v *StepView) GetCallDepth() (uint64, error)      { return asUint64(v.Get(fieldCallDepth)) }
 func (v *StepView) SetCallDepth(p uint64) error        { return v.Set(fieldCallDepth, Uint64View(p)) }
 func (v *StepView) GetCaller() (Address, error)        { return AsAddress(v.Get(fieldCaller)) }
 func (v *StepView) SetCaller(p Address) error          { return v.Set(fieldCaller, p.View()) }
-func (v *StepView) GetMemory() (View, error)           { return v.Get(fieldMemory) }
-func (v *StepView) SetMemory(p View) error             { return v.Set(fieldMemory, p) }
-func (v *StepView) GetMemLastGasCost() (uint64, error) { return asUint64(v.Get(fieldMemLastGasCost)) }
-func (v *StepView) SetMemLastGasCost(p uint64) error   { return v.Set(fieldMemLastGasCost, Uint64View(p)) }
-func (v *StepView) GetStack() (View, error)            { return v.Get(fieldStack) }
-func (v *StepView) SetStack(p View) error              { return v.Set(fieldStack, p) }
-func (v *StepView) GetReturnData() (View, error)       { return v.Get(fieldReturnData) }
-func (v *StepView) SetReturnData(p View) error         { return v.Set(fieldReturnData, p) }
-func (v *StepView) GetCode() (View, error)             { return v.Get(fieldCode) }
-func (v *StepView) SetCode(p View) error               { return v.Set(fieldCode, p) }
-func (v *StepView) GetCodeHash() (View, error)         { return v.Get(fieldCodeHash) }
+func (v *StepView) GetMemory() (*MemoryView, error)    { return AsMemoryView(v.Get(fieldMemory)) }
+func (v *StepView) SetMemory(p *MemoryView) error      { return v.Set(fieldMemory, p) }
+func (v *StepView) GetMemLastGas() (uint64, error)     { return asUint64(v.Get(fieldMemLastGas)) }
+func (v *StepView) SetMemLastGas(p uint64) error       { return v.Set(fieldMemLastGas, Uint64View(p)) }
+func (v *StepView) GetStack() (*StackView, error)      { return AsStackView(v.Get(fieldStack)) }
+func (v *StepView) SetStack(p *StackView) error        { return v.Set(fieldStack, p) }
+func (v *StepView) GetRetData() (*RetDataView, error)  { return AsRetDataView(v.Get(fieldRetData)) }
+func (v *StepView) SetRetData(p *RetDataView) error    { return v.Set(fieldRetData, p) }
+func (v *StepView) GetCode() (*CodeView, error)        { return AsCodeView(v.Get(fieldCode)) }
+func (v *StepView) SetCode(p *CodeView) error          { return v.Set(fieldCode, p) }
+func (v *StepView) GetCodeHash() ([32]byte, error)     { return AsRoot(v.Get(fieldCodeHash)) }
 func (v *StepView) SetCodeHash(p [32]byte) error       { return v.Set(fieldCodeHash, (*Bytes32View)(&p)) }
 func (v *StepView) GetCodeAddr() (Address, error)      { return AsAddress(v.Get(fieldCodeAddr)) }
 func (v *StepView) SetCodeAddr(p Address) error        { return v.Set(fieldCodeAddr, p.View()) }
-func (v *StepView) GetInput() (View, error)            { return v.Get(fieldInput) }
-func (v *StepView) SetInput(p View) error              { return v.Set(fieldInput, p) }
-func (v *StepView) GetGas() (View, error)              { return v.Get(fieldGas) }
+func (v *StepView) GetInput() (*InputView, error)      { return AsInputView(v.Get(fieldInput)) }
+func (v *StepView) SetInput(p *InputView) error        { return v.Set(fieldInput, p) }
+func (v *StepView) GetGas() (uint64, error)            { return asUint64(v.Get(fieldGas)) }
 func (v *StepView) SetGas(p uint64) error              { return v.Set(fieldGas, Uint64View(p)) }
 func (v *StepView) GetValue() ([32]byte, error)        { return AsRoot(v.Get(fieldValue)) }
 func (v *StepView) SetValue(p [32]byte) error          { return v.Set(fieldValue, (*Bytes32View)(&p)) }
-func (v *StepView) GetOp() (View, error)               { return v.Get(fieldOp) }
+func (v *StepView) GetOp() (byte, error)               { return asByte(v.Get(fieldOp)) }
 func (v *StepView) SetOp(p byte) error                 { return v.Set(fieldOp, ByteView(p)) }
 func (v *StepView) GetPc() (uint64, error)             { return asUint64(v.Get(fieldPc)) }
 func (v *StepView) SetPc(p uint64) error               { return v.Set(fieldPc, Uint64View(p)) }
@@ -167,8 +109,8 @@ func (v *StepView) GetSubIndex() (uint64, error)       { return asUint64(v.Get(f
 func (v *StepView) SetSubIndex(p uint64) error         { return v.Set(fieldSubIndex, Uint64View(p)) }
 func (v *StepView) GetSubRemaining() (bool, error)     { return asBool(v.Get(fieldSubRemaining)) }
 func (v *StepView) SetSubRemaining(p bool) error       { return v.Set(fieldSubRemaining, BoolView(p)) }
-func (v *StepView) GetSubScratch() (View, error)       { return v.Get(fieldSubScratch) }
-func (v *StepView) SetSubScratch(p View) error         { return v.Set(fieldSubScratch, p) }
+func (v *StepView) GetSubData() (*SubDataView, error)  { return AsSubDataView(v.Get(fieldSubData)) }
+func (v *StepView) SetSubData(p *SubDataView) error    { return v.Set(fieldSubData, p) }
 func (v *StepView) GetReturnToStep() (uint64, error)   { return asUint64(v.Get(fieldReturnToStep)) }
 func (v *StepView) SetReturnToStep(p uint64) error     { return v.Set(fieldReturnToStep, Uint64View(p)) }
 
@@ -182,7 +124,7 @@ func StepType() *ContainerTypeDef {
 		// History scope
 		// ------------------
 		// Most recent 256 blocks (excluding the block itself)
-		{"block_hashes", BlockHashesType},
+		{"block_hashes", HistType},
 		// Block scope
 		// ------------------
 		// TODO: origin balance check for fee payment and value transfer
@@ -206,9 +148,9 @@ func StepType() *ContainerTypeDef {
 		{"caller", AddressType},
 		{"memory", MemoryType},
 		// expanding memory costs exponentially more gas, for the difference in length
-		{"memory_last_gas_cost", Uint64Type},
+		{"memory_last_gas", Uint64Type},
 		{"stack", StackType},
-		{"return_data", ReturnDataType},
+		{"ret_data", RetDataType},
 		{"code", CodeType},
 		{"code_hash", Bytes32Type},
 		{"code_addr", AddressType},
@@ -225,7 +167,7 @@ func StepType() *ContainerTypeDef {
 		// true when the sub-operation is ongoing and must be completed still.
 		{"sub_remaining", BoolType},
 		// sub-computations need a place to track their inner state
-		{"sub_scratch", ScratchType},
+		{"sub_data", SubDataType},
 		// When doing a return, continue with the operations after this step.
 		{"return_to_step", Uint64Type},
 	})
