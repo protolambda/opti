@@ -1,62 +1,12 @@
 package opti
 
 import (
-	"fmt"
 	. "github.com/protolambda/ztyp/view"
 )
 
-type Steps []*StepView
-
-func (steps *Steps) Prev() *StepView {
-	if steps == nil {
-		return nil
-	}
-	if len(*steps) == 0 {
-		return nil
-	}
-	return (*steps)[len(*steps)-1]
-}
-
-func (steps *Steps) ByIndex(i uint64) *StepView {
-	if steps == nil {
-		return nil
-	}
-	if i >= uint64(len(*steps)) {
-		return nil
-	}
-	return (*steps)[i]
-}
-
-var _ StepsTrace = (*Steps)(nil)
-
-func (steps *Steps) Append(step *StepView) error {
-	if steps == nil {
-		return fmt.Errorf("cannot extend nil steps")
-	}
-	*steps = append(*steps, step)
-	return nil
-}
-
-func (steps *Steps) Length() uint64 {
-	if steps == nil {
-		return 0
-	}
-	return uint64(len(*steps))
-}
-
-type StepsTrace interface {
-	// nil if empty steps
-	Prev() *StepView
-	// nil if invalid index
-	ByIndex(i uint64) *StepView
-	Append(step *StepView) error
-	Length() uint64
-}
-
-type Processor func(trac StepsTrace) error
-
 const (
 	fieldStateRoot = iota
+	fieldExecMode
 	fieldBlockHashes
 	fieldCoinbase
 	fieldGasLimit
@@ -81,6 +31,7 @@ const (
 	fieldInput
 	fieldGas
 	fieldValue
+	fieldReadOnly
 	fieldOp
 	fieldPc
 	fieldSubIndex
@@ -104,6 +55,8 @@ func (v *StepView) CopyView() (*StepView, error) {
 
 func (v *StepView) GetStateRoot() ([32]byte, error)    { return AsRoot(v.Get(fieldStateRoot)) }
 func (v *StepView) SetStateRoot(p [32]byte) error      { return v.Set(fieldStateRoot, (*Bytes32View)(&p)) }
+func (v *StepView) GetExecMode() (byte, error)         { return asByte(v.Get(fieldExecMode)) }
+func (v *StepView) SetExecMode(p byte) error           { return v.Set(fieldExecMode, ByteView(p)) }
 func (v *StepView) GetBlockHashes() (*HistView, error) { return AsHistView(v.Get(fieldBlockHashes)) }
 func (v *StepView) SetBlockHashes(p *HistView) error   { return v.Set(fieldBlockHashes, p) }
 func (v *StepView) GetCoinbase() (Address, error)      { return AsAddress(v.Get(fieldCoinbase)) }
@@ -152,6 +105,8 @@ func (v *StepView) GetGas() (uint64, error)            { return asUint64(v.Get(f
 func (v *StepView) SetGas(p uint64) error              { return v.Set(fieldGas, Uint64View(p)) }
 func (v *StepView) GetValue() ([32]byte, error)        { return AsRoot(v.Get(fieldValue)) }
 func (v *StepView) SetValue(p [32]byte) error          { return v.Set(fieldValue, (*Bytes32View)(&p)) }
+func (v *StepView) GetReadOnly() (bool, error)         { return asBool(v.Get(fieldReadOnly)) }
+func (v *StepView) SetReadOnly(p bool) error           { return v.Set(fieldReadOnly, BoolView(p)) }
 func (v *StepView) GetOp() (byte, error)               { return asByte(v.Get(fieldOp)) }
 func (v *StepView) SetOp(p byte) error                 { return v.Set(fieldOp, ByteView(p)) }
 func (v *StepView) GetPc() (uint64, error)             { return asUint64(v.Get(fieldPc)) }
@@ -172,6 +127,8 @@ func StepType() *ContainerTypeDef {
 		// Steps that access memory need to supply a separate (outside of the step sub-tree)
 		// MPT-proof of the account and/or storage to access the data.
 		{"state_root", Bytes32Type},
+
+		{"exec_mode", Uint8Type},
 
 		// TODO: operation-mode field, to switch between:
 		// - block processing
@@ -201,8 +158,6 @@ func StepType() *ContainerTypeDef {
 		{"tx_index", Uint64Type},
 		{"gas_price", Uint64Type},
 
-		// TODO: add read-only mode bool field to support STATIC-CALL
-
 		// Contract scope
 		// ------------------
 		{"to", AddressType},
@@ -220,6 +175,8 @@ func StepType() *ContainerTypeDef {
 		{"input", InputType},
 		{"gas", Uint64Type},
 		{"value", Bytes32Type},
+		// Make storage read-only, to support STATIC-CALL
+		{"read_only", BoolType},
 		// Execution scope
 		// ------------------
 		// ignored for starting-state (zeroed)
@@ -233,5 +190,7 @@ func StepType() *ContainerTypeDef {
 		{"sub_data", SubDataType},
 		// When doing a return, continue with the operations after this step.
 		{"return_to_step", Uint64Type},
+		// Depending on the unwind mode: continue/return/out-of-gas/etc.
+		{"unwind", Uint64Type},
 	})
 }
