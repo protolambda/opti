@@ -30,6 +30,19 @@ func opStart(trac StepsTrace) (*StepView, error) {
 	return step, nil
 }
 
+func OpStop(trac StepsTrace) (*StepView, error) {
+	last := trac.Last()
+	next, err := last.CopyView()
+	if err != nil {
+		return nil, err
+	}
+	// halt the EVM, we're done with the tx
+	if err := next.SetExecMode(ExecSTOP); err != nil {
+		return nil, err
+	}
+	return next, nil
+}
+
 func OpPop(trac StepsTrace) (*StepView, error) {
 	next, err := opStart(trac)
 	if err != nil {
@@ -44,6 +57,9 @@ func OpPop(trac StepsTrace) (*StepView, error) {
 		return nil, err
 	}
 	if err := next.IncrementPC(); err != nil {
+		return nil, err
+	}
+	if err := next.SetExecMode(ExecOpcodeLoad); err != nil {
 		return nil, err
 	}
 	return next, nil
@@ -96,6 +112,9 @@ func MakePush(size uint64, pushByteSize uint64) Processor {
 			return nil, err
 		}
 		if err := next.SetPc(pc + size); err != nil {
+			return nil, err
+		}
+		if err := next.SetExecMode(ExecOpcodeLoad); err != nil {
 			return nil, err
 		}
 		return next, nil

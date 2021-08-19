@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/ethereum/go-ethereum/common/math"
 	"github.com/ethereum/go-ethereum/core/vm"
+	"github.com/ethereum/go-ethereum/params"
 	"math/big"
 )
 
@@ -68,6 +69,9 @@ const (
 	// Any error should follow up with running call-post processing
 	ExecCallPost
 
+	// Stops execution
+	ExecSTOP
+
 	// TODO: charge tx fees
 	ExecTxFeesPost
 
@@ -104,6 +108,51 @@ func (cfg *Config) Rules(blockNum uint64) Rules {
 		IsIstanbul:       true,
 		IsBerlin:         true,
 		IsLondon:         true,
+	}
+}
+
+func maxStack(pop, push uint64) uint64 {
+	return uint64(params.StackLimit) + pop - push
+}
+
+func minStack(pops, push uint64) uint64 {
+	return pops
+}
+
+func DefaultJumpTable() [256]*Operation {
+	// TODO: not all operations supported yet.
+	return [256]*Operation{
+		vm.STOP: {
+			Proc:        OpStop,
+			constantGas: 0,
+			minStack:    minStack(0, 0),
+			maxStack:    maxStack(0, 0),
+			halts:       true,
+		},
+		vm.PUSH1: {
+			Proc:        MakePush(1, 1),
+			constantGas: GasFastestStep,
+			minStack:    minStack(0, 1),
+			maxStack:    maxStack(0, 1),
+		},
+		vm.PUSH2: {
+			Proc:        MakePush(2, 2),
+			constantGas: GasFastestStep,
+			minStack:    minStack(0, 1),
+			maxStack:    maxStack(0, 1),
+		},
+		vm.PUSH3: {
+			Proc:        MakePush(3, 3),
+			constantGas: GasFastestStep,
+			minStack:    minStack(0, 1),
+			maxStack:    maxStack(0, 1),
+		},
+		vm.POP: {
+			Proc:        OpPop,
+			constantGas: GasQuickStep,
+			minStack:    minStack(1, 0),
+			maxStack:    maxStack(1, 0),
+		},
 	}
 }
 
@@ -147,6 +196,9 @@ func (cfg *Config) NextStep(trac StepsTrace) (*StepView, error) {
 		return cfg.execOpcodeRun(trac)
 	case ExecCallPost:
 		return cfg.execCallPost(trac)
+	case ExecSTOP:
+		// TODO: continue post processing, instead of nil on tx stop
+		return nil, nil
 	case ExecTxFeesPost:
 		// TODO
 		return nil, errors.New("fix me")

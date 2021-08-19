@@ -34,7 +34,7 @@ func (v *StackView) Back(n uint64) ([32]byte, error) {
 		return [32]byte{}, err
 	}
 	if n+1 > length {
-		return [32]byte{}, fmt.Errorf("bad stack back access", n)
+		return [32]byte{}, fmt.Errorf("bad stack back access: %d", n)
 	}
 	return v.GetWord(length - n - 1)
 }
