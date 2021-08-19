@@ -2,6 +2,7 @@ package opti
 
 import (
 	"fmt"
+	"github.com/ethereum/go-ethereum/core/vm"
 	. "github.com/protolambda/ztyp/view"
 )
 
@@ -21,8 +22,17 @@ func AsCodeView(v View, err error) (*CodeView, error) {
 	return &CodeView{BasicListView: li}, err
 }
 
-func (v *CodeView) GetOp(pc uint64) (byte, error) {
-	return asByte(v.Get(pc))
+func (v *CodeView) GetOp(pc uint64) (vm.OpCode, error) {
+	codeLen, err := v.Length()
+	if err != nil {
+		return 0, err
+	}
+	// completed all opcodes? Then the opcode will be 0.
+	if pc >= codeLen {
+		return 0, nil
+	}
+
+	return asOpCode(v.Get(pc))
 }
 
 func (v *CodeView) Slice(start uint64, end uint64) ([]byte, error) {

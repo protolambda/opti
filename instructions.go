@@ -2,9 +2,10 @@ package opti
 
 import "github.com/ethereum/go-ethereum/common"
 
-func opStart(prev *StepView) (*StepView, error) {
+func opStart(trac StepsTrace) (*StepView, error) {
+	last := trac.Last()
 	// construct the first (and maybe only sub-step)
-	step, err := prev.CopyView()
+	step, err := last.CopyView()
 	if err != nil {
 		return nil, err
 	}
@@ -29,41 +30,44 @@ func opStart(prev *StepView) (*StepView, error) {
 	return step, nil
 }
 
-func OpPop(trac StepsTrace) error {
-	step, err := opStart(trac.Prev())
+func OpPop(trac StepsTrace) (*StepView, error) {
+	next, err := opStart(trac)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	stack, err := step.GetStack()
+	stack, err := next.GetStack()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if err := stack.PopWord(); err != nil {
-		return err
+		return nil, err
 	}
-	return trac.Append(step)
+	if err := next.IncrementPC(); err != nil {
+		return nil, err
+	}
+	return next, nil
 }
 
 func MakePush(size uint64, pushByteSize uint64) Processor {
-	return func(trac StepsTrace) error {
-		step, err := opStart(trac.Prev())
+	return func(trac StepsTrace) (*StepView, error) {
+		next, err := opStart(trac)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		code, err := step.GetCode()
+		code, err := next.GetCode()
 		if err != nil {
-			return err
+			return nil, err
 		}
 		codeLen, err := code.Length()
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		pc, err := step.GetPc()
+		pc, err := next.GetPc()
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		startMin := codeLen
@@ -78,22 +82,22 @@ func MakePush(size uint64, pushByteSize uint64) Processor {
 
 		data, err := code.Slice(startMin, endMin)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		var w [32]byte
 		// TODO: padding is probably wrong
 		copy(w[:], common.RightPadBytes(data, 32))
 
-		stack, err := step.GetStack()
+		stack, err := next.GetStack()
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if err := stack.PushWord(w); err != nil {
-			return err
+			return nil, err
 		}
-		if err := step.SetPc(pc + size); err != nil {
-			return err
+		if err := next.SetPc(pc + size); err != nil {
+			return nil, err
 		}
-		return trac.Append(step)
+		return next, nil
 	}
 }

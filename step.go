@@ -1,6 +1,7 @@
 package opti
 
 import (
+	"github.com/ethereum/go-ethereum/core/vm"
 	. "github.com/protolambda/ztyp/view"
 )
 
@@ -23,6 +24,7 @@ const (
 	fieldCaller
 	fieldMemory
 	fieldMemLastGas
+	fieldMemDesired
 	fieldStack
 	fieldRetData
 	fieldCode
@@ -55,8 +57,8 @@ func (v *StepView) CopyView() (*StepView, error) {
 
 func (v *StepView) GetStateRoot() ([32]byte, error)    { return AsRoot(v.Get(fieldStateRoot)) }
 func (v *StepView) SetStateRoot(p [32]byte) error      { return v.Set(fieldStateRoot, (*Bytes32View)(&p)) }
-func (v *StepView) GetExecMode() (byte, error)         { return asByte(v.Get(fieldExecMode)) }
-func (v *StepView) SetExecMode(p byte) error           { return v.Set(fieldExecMode, ByteView(p)) }
+func (v *StepView) GetExecMode() (ExecMode, error)     { return asExecMode(v.Get(fieldExecMode)) }
+func (v *StepView) SetExecMode(p ExecMode) error       { return v.Set(fieldExecMode, ByteView(p)) }
 func (v *StepView) GetBlockHashes() (*HistView, error) { return AsHistView(v.Get(fieldBlockHashes)) }
 func (v *StepView) SetBlockHashes(p *HistView) error   { return v.Set(fieldBlockHashes, p) }
 func (v *StepView) GetCoinbase() (Address, error)      { return AsAddress(v.Get(fieldCoinbase)) }
@@ -89,6 +91,8 @@ func (v *StepView) GetMemory() (*MemoryView, error)    { return AsMemoryView(v.G
 func (v *StepView) SetMemory(p *MemoryView) error      { return v.Set(fieldMemory, p) }
 func (v *StepView) GetMemLastGas() (uint64, error)     { return asUint64(v.Get(fieldMemLastGas)) }
 func (v *StepView) SetMemLastGas(p uint64) error       { return v.Set(fieldMemLastGas, Uint64View(p)) }
+func (v *StepView) GetMemDesired() (uint64, error)     { return asUint64(v.Get(fieldMemDesired)) }
+func (v *StepView) SetMemDesired(p uint64) error       { return v.Set(fieldMemDesired, Uint64View(p)) }
 func (v *StepView) GetStack() (*StackView, error)      { return AsStackView(v.Get(fieldStack)) }
 func (v *StepView) SetStack(p *StackView) error        { return v.Set(fieldStack, p) }
 func (v *StepView) GetRetData() (*RetDataView, error)  { return AsRetDataView(v.Get(fieldRetData)) }
@@ -107,8 +111,8 @@ func (v *StepView) GetValue() ([32]byte, error)        { return AsRoot(v.Get(fie
 func (v *StepView) SetValue(p [32]byte) error          { return v.Set(fieldValue, (*Bytes32View)(&p)) }
 func (v *StepView) GetReadOnly() (bool, error)         { return asBool(v.Get(fieldReadOnly)) }
 func (v *StepView) SetReadOnly(p bool) error           { return v.Set(fieldReadOnly, BoolView(p)) }
-func (v *StepView) GetOp() (byte, error)               { return asByte(v.Get(fieldOp)) }
-func (v *StepView) SetOp(p byte) error                 { return v.Set(fieldOp, ByteView(p)) }
+func (v *StepView) GetOp() (vm.OpCode, error)          { return asOpCode(v.Get(fieldOp)) }
+func (v *StepView) SetOp(p vm.OpCode) error            { return v.Set(fieldOp, ByteView(p)) }
 func (v *StepView) GetPc() (uint64, error)             { return asUint64(v.Get(fieldPc)) }
 func (v *StepView) SetPc(p uint64) error               { return v.Set(fieldPc, Uint64View(p)) }
 func (v *StepView) GetSubIndex() (uint64, error)       { return asUint64(v.Get(fieldSubIndex)) }
@@ -167,6 +171,8 @@ func StepType() *ContainerTypeDef {
 		{"memory", MemoryType},
 		// expanding memory costs exponentially more gas, for the difference in length
 		{"memory_last_gas", Uint64Type},
+		// We compute the memory size, charge for it first, and only then allocate it.
+		{"memory_desired", Uint64Type},
 		{"stack", StackType},
 		{"ret_data", RetDataType},
 		{"code", CodeType},
@@ -179,8 +185,11 @@ func StepType() *ContainerTypeDef {
 		{"read_only", BoolType},
 		// Execution scope
 		// ------------------
-		// ignored for starting-state (zeroed)
+		// We generalize the opcode read from the code at PC,
+		// and cache it here to not re-read the code every step of the opcode.
+		// Ignored for starting-state (zeroed).
 		{"op", ByteType},
+		// The program-counter, index pointing to current executed opcode in the code
 		{"pc", Uint64Type},
 		// when splitting up operations further
 		{"sub_index", Uint64Type},

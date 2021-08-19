@@ -1,6 +1,7 @@
 package opti
 
 import (
+	"github.com/ethereum/go-ethereum/core/vm"
 	. "github.com/protolambda/ztyp/view"
 )
 
@@ -25,6 +26,16 @@ type Address [20]byte
 func (addr Address) View() SmallByteVecView {
 	// overlay on a copy of the value
 	return SmallByteVecView(addr[:])
+}
+
+func asExecMode(v View, err error) (ExecMode, error) {
+	out, errOut := AsByte(v, err)
+	return ExecMode(out), errOut
+}
+
+func asOpCode(v View, err error) (vm.OpCode, error) {
+	out, errOut := AsByte(v, err)
+	return vm.OpCode(out), errOut
 }
 
 func asByte(v View, err error) (byte, error) {
