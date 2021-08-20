@@ -513,12 +513,12 @@ func (cfg *Config) execUpdateMemorySize(trac StepsTrace) (*StepView, error) {
 		// If we can efficiently add 32 bytes of memory, go for it.
 		// Otherwise just align by adding a byte, or finishing trailing non-aligning bytes.
 		if (memorySize-mLen > 32) && (mLen%32 == 0) {
-			memorySize -= 32
+			memorySize += 32
 			if err := memory.AppendZeroBytes32(); err != nil {
 				return nil, err
 			}
 		} else {
-			memorySize -= 1
+			memorySize += 1
 			if err := memory.AppendZeroByte(); err != nil {
 				return nil, err
 			}
